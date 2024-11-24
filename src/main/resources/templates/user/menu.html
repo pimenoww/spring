@@ -6,7 +6,8 @@
 <body>
 <h1>Добро пожаловать, пользователь!</h1>
 <ul>
-  <li><a href="/bonus-cards">Просмотр карт</a></li>
+  <li>
+    <a th:href="@{/bonus-cards(username=${username})}">Просмотр карт</a></li>
   <li><a href="/auth/logout">Выход</a></li>
 </ul>
 </body>

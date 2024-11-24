@@ -2,8 +2,8 @@ package com.example.labstr.dao;
 
 //package com.example.bonusprogram.dao.impl;
 
-import com.example.labstr.dao.BonusCardDao;
 import com.example.labstr.models.BonusCard;
+import com.example.labstr.models.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -48,5 +48,13 @@ public class BonusCardDaoImpl implements BonusCardDao {
     @Override
     public void delete(BonusCard bonusCard) {
         entityManager.remove(entityManager.contains(bonusCard) ? bonusCard : entityManager.merge(bonusCard));
+    }
+
+    @Override
+    public List<BonusCard> findCardsByUser(User user) {
+        return entityManager.createQuery(
+                        "SELECT b FROM BonusCard b WHERE b.user = :user", BonusCard.class)
+                .setParameter("user", user)
+                .getResultList();
     }
 }

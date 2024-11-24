@@ -3,9 +3,12 @@ package com.example.labstr.services;
 
 
 import com.example.labstr.dao.BonusCardDao;
+import com.example.labstr.dao.UserDao;
 import com.example.labstr.models.BonusCard;
 import com.example.labstr.models.BonusTransaction;
 import com.example.labstr.models.TransactionType;
+import com.example.labstr.models.User;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -14,8 +17,11 @@ public class BonusCardService {
 
     private final BonusCardDao bonusCardDao;
 
-    public BonusCardService(BonusCardDao bonusCardDao) {
+    private final UserDao userDao;
+
+    public BonusCardService(BonusCardDao bonusCardDao, UserDao userDao) {
         this.bonusCardDao = bonusCardDao;
+        this.userDao = userDao;
     }
 
     public BonusCard findById(Long id) {
@@ -55,5 +61,13 @@ public class BonusCardService {
 
     public boolean isValidCardNumber(String cardNumber) {
         return cardNumber.matches("\\d{6}");
+    }
+
+    public List<BonusCard> getCardsByUser(String username) {
+        User user = userDao.findByUsername(username);
+        if (user == null) {
+            throw new IllegalArgumentException("Пользователь не найден");
+        }
+        return bonusCardDao.findCardsByUser(user);
     }
 }

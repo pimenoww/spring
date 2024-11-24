@@ -38,35 +38,60 @@ public class BonusCardController {
         }
 
         model.addAttribute("username", username);
-        model.addAttribute("cards", bonusCardService.getAllCards());
-        return "bonus-cards/list";
+
+        if (userService.isAdmin(username)) {
+            model.addAttribute("cards", bonusCardService.getAllCards());
+            return "bonus-cards/list"; // Шаблон для администратора
+        } else {
+            List<BonusCard> userCards = bonusCardService.getCardsByUser(username);
+            model.addAttribute("cards", userCards);
+            return "bonus-cards/user_cards"; // Шаблон для пользователя
+        }
     }
 
     // Страница добавления новой карты
     @GetMapping("/new")
-    public String showNewCardForm(@RequestParam String username, Model model) {
-        if (!userService.isAdmin(username)) {
+    public String showNewCardForm(HttpSession session, Model model) {
+        String username = (String) session.getAttribute("username");
+        if (username == null || !userService.isAdmin(username)) {
             return "error/403";
         }
         model.addAttribute("bonusCard", new BonusCard());
         return "bonus-cards/new";
     }
 
-    // Обработка создания новой карты
     @PostMapping("/new")
-    public String createCard(@RequestParam String username, @ModelAttribute BonusCard bonusCard, Model model) {
-        if (!userService.isAdmin(username)) {
-            return "error/403";
+    public String createCard(
+            HttpSession session,
+            @RequestParam String cardNumber,
+            @RequestParam String ownerName,
+            @RequestParam String username, // Логин пользователя, указанного администратором
+            Model model) {
+        String adminUsername = (String) session.getAttribute("username");
+        if (adminUsername == null || !userService.isAdmin(adminUsername)) {
+            return "error/403"; // Ограничить доступ для неадминистраторов
         }
-        if (!bonusCardService.isValidCardNumber(bonusCard.getCardNumber())) {
+
+        // Найти пользователя по логину, указанному администратором
+        User user = userService.findByUsername(username);
+        if (user == null) {
+            model.addAttribute("error", "Пользователь с логином '" + username + "' не найден.");
+            return "bonus-cards/new";
+        }
+
+        // Проверка валидности номера карты
+        if (!bonusCardService.isValidCardNumber(cardNumber)) {
             model.addAttribute("error", "Номер карты должен содержать 6 цифр.");
             return "bonus-cards/new";
         }
+
+        // Создание новой карты, привязанной к указанному пользователю
+        BonusCard bonusCard = new BonusCard(cardNumber, ownerName, 0.0, user);
         bonusCardService.createCard(bonusCard);
+
         return "redirect:/bonus-cards";
     }
 
-    // Страница редактирования карты
     @GetMapping("/{id}/edit")
     public String showEditCardForm(@PathVariable Long id, Model model) {
         BonusCard card = bonusCardService.findById(id);
@@ -74,7 +99,6 @@ public class BonusCardController {
         return "bonus-cards/edit";
     }
 
-    // Обработка редактирования карты
     @PostMapping("/{id}/edit")
     public String updateCard(@PathVariable Long id, @ModelAttribute BonusCard bonusCard) {
         bonusCard.setId(id); // Установим ID вручную
@@ -82,15 +106,22 @@ public class BonusCardController {
         return "redirect:/bonus-cards";
     }
 
-    // Удаление карты
     @PostMapping("/{id}/delete")
-    public String deleteCard(@PathVariable Long id) {
+    public String deleteCard(HttpSession session, @PathVariable Long id) {
+        String username = (String) session.getAttribute("username");
+        if (username == null) {
+            return "redirect:/auth/login";
+        }
+
         BonusCard card = bonusCardService.findById(id);
+        if (card == null || (!userService.isAdmin(username) && !card.getUser().getUsername().equals(username))) {
+            return "error/403";
+        }
+
         bonusCardService.deleteCard(card);
         return "redirect:/bonus-cards";
     }
 
-    // Страница управления балансом
     @GetMapping("/{id}")
     public String manageCard(@PathVariable Long id, Model model) {
         BonusCard card = bonusCardService.findById(id);
@@ -98,7 +129,6 @@ public class BonusCardController {
         return "bonus-cards/manage";
     }
 
-    // Добавление бонусов
     @PostMapping("/{id}/credit")
     public String creditBalance(@PathVariable Long id, @RequestParam double amount) {
         BonusCard card = bonusCardService.findById(id);
@@ -106,7 +136,6 @@ public class BonusCardController {
         return "redirect:/bonus-cards/" + id;
     }
 
-    // Списание бонусов
     @PostMapping("/{id}/debit")
     public String debitBalance(@PathVariable Long id, @RequestParam double amount) {
         BonusCard card = bonusCardService.findById(id);
@@ -118,8 +147,9 @@ public class BonusCardController {
     }
 
     @PostMapping("/{id}/purchase")
-    public String processPurchase(@RequestParam String username, @PathVariable Long id, @RequestParam double amount) {
-        if (!userService.isUser(username)) {
+    public String processPurchase(HttpSession session, @PathVariable Long id, @RequestParam double amount) {
+        String username = (String) session.getAttribute("username");
+        if (username == null || !userService.isUser(username)) {
             return "error/403";
         }
         BonusCard card = bonusCardService.findById(id);
@@ -127,7 +157,6 @@ public class BonusCardController {
         return "redirect:/bonus-cards/" + id;
     }
 
-    // Скачивание отчета по карте
     @GetMapping("/{id}/report")
     public void downloadReport(@PathVariable Long id, HttpServletResponse response) throws IOException {
         BonusCard card = bonusCardService.findById(id);
@@ -141,13 +170,6 @@ public class BonusCardController {
             writer.println("Номер карты: " + card.getCardNumber());
             writer.println("Владелец: " + card.getOwnerName());
             writer.println("Текущий баланс: " + card.getBalance());
-            writer.println();
-            writer.println("История операций:");
-            writer.println("Дата и время\t\tТип\t\tСумма");
-            card.getTransactions().forEach(transaction -> writer.printf("%s\t%s\t%.2f%n",
-                    transaction.getTransactionDate(),
-                    transaction.getTransactionType(),
-                    transaction.getAmount()));
         }
     }
 }

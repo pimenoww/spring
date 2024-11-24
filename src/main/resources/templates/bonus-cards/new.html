@@ -6,14 +6,17 @@
 <body>
 <h1>Создание бонусной карты</h1>
 <form action="/bonus-cards/new" method="post">
-    <input type="hidden" name="username" th:value="${username}">
     <label>Номер карты:</label>
     <input type="text" name="cardNumber" required>
+    <br>
     <label>Имя владельца:</label>
     <input type="text" name="ownerName" required>
+    <br>
+    <label>Логин пользователя:</label>
+    <input type="text" name="username" required> <!-- Новое поле -->
+    <br>
     <button type="submit">Создать</button>
 </form>
 <div th:if="${error}" th:text="${error}" style="color:red;"></div>
-
 </body>
 </html>
