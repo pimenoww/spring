@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Редактировать карту</title>
+</head>
+<body>
+<h1>Редактирование карты</h1>
+<form th:action="@{/bonus-cards/{id}/edit(id=${bonusCard.id})}" method="post">
+  <label for="cardNumber">Номер карты:</label>
+  <input type="text" id="cardNumber" name="cardNumber" th:value="${bonusCard.cardNumber}" required>
+  <br>
+  <label for="ownerName">Имя владельца:</label>
+  <input type="text" id="ownerName" name="ownerName" th:value="${bonusCard.ownerName}" required>
+  <br>
+  <button type="submit">Сохранить изменения</button>
+</form>
+</body>
+</html>

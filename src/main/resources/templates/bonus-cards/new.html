@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Создать бонусную карту</title>
+</head>
+<body>
+<h1>Создание бонусной карты</h1>
+<form action="/bonus-cards/new" method="post">
+    <input type="hidden" name="username" th:value="${username}">
+    <label>Номер карты:</label>
+    <input type="text" name="cardNumber" required>
+    <label>Имя владельца:</label>
+    <input type="text" name="ownerName" required>
+    <button type="submit">Создать</button>
+</form>
+<div th:if="${error}" th:text="${error}" style="color:red;"></div>
+
+</body>
+</html>

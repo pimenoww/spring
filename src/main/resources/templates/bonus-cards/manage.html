@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Управление бонусной картой</title>
+</head>
+<body>
+<h1>Управление картой</h1>
+<p>Номер карты: <span th:text="${bonusCard.cardNumber}"></span></p>
+<p>Владелец: <span th:text="${bonusCard.ownerName}"></span></p>
+<p>Баланс: <span th:text="${bonusCard.balance}"></span></p>
+<form th:action="@{/bonus-cards/{id}/credit(id=${bonusCard.id})}" method="post">
+  <label for="creditAmount">Зачислить бонусы:</label>
+  <input type="number" id="creditAmount" name="amount" required>
+  <button type="submit">Зачислить</button>
+</form>
+<form th:action="@{/bonus-cards/{id}/debit(id=${bonusCard.id})}" method="post">
+  <label for="debitAmount">Списать бонусы:</label>
+  <input type="number" id="debitAmount" name="amount" required>
+  <button type="submit">Списать</button>
+</form>
+</body>
+</html>
