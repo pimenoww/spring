@@ -2,9 +2,7 @@ package com.example.labstr.controllers;
 
 
 
-import com.example.labstr.models.BonusCard;
-import com.example.labstr.models.TransactionType;
-import com.example.labstr.models.User;
+import com.example.labstr.models.*;
 import com.example.labstr.services.BonusCardService;
 import com.example.labstr.services.UserService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -65,32 +63,41 @@ public class BonusCardController {
             HttpSession session,
             @RequestParam String cardNumber,
             @RequestParam String ownerName,
-            @RequestParam String username, // Логин пользователя, указанного администратором
+            @RequestParam String username,
             Model model) {
         String adminUsername = (String) session.getAttribute("username");
         if (adminUsername == null || !userService.isAdmin(adminUsername)) {
-            return "error/403"; // Ограничить доступ для неадминистраторов
+            return "error/403";
         }
 
-        // Найти пользователя по логину, указанному администратором
         User user = userService.findByUsername(username);
         if (user == null) {
             model.addAttribute("error", "Пользователь с логином '" + username + "' не найден.");
             return "bonus-cards/new";
         }
 
-        // Проверка валидности номера карты
         if (!bonusCardService.isValidCardNumber(cardNumber)) {
             model.addAttribute("error", "Номер карты должен содержать 6 цифр.");
             return "bonus-cards/new";
         }
 
-        // Создание новой карты, привязанной к указанному пользователю
         BonusCard bonusCard = new BonusCard(cardNumber, ownerName, 0.0, user);
         bonusCardService.createCard(bonusCard);
 
+        // Сохранение в XML
+        try {
+            BonusCardXml bonusCardXml = new BonusCardXml(cardNumber, ownerName, 0.0);
+            String filePath = "bonus_card_" + cardNumber + ".xml"; // Путь к файлу
+            XmlUtil.saveToXml(bonusCardXml, filePath);
+        } catch (Exception e) {
+            e.printStackTrace(); // Логируйте ошибку, чтобы можно было её диагностировать
+            model.addAttribute("error", "Ошибка при сохранении данных в XML.");
+            return "bonus-cards/new";
+        }
+
         return "redirect:/bonus-cards";
     }
+
 
     @GetMapping("/{id}/edit")
     public String showEditCardForm(@PathVariable Long id, Model model) {
